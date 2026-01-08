@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Restaurant {
+  id           Int                @id @default(autoincrement())
+  name         String
+  openTime     String
+  closeTime    String
+  totalTables  Int
+  peakHourStart String?
+  peakHourEnd   String?
+  maxPeakDurationMinutes Int?
+  tables       RestaurantTable[]
+  reservations Reservation[]
+  waitlist     Waitlist[]
+  createdAt    DateTime           @default(now())
+}
+
+model RestaurantTable {
+  id           Int          @id @default(autoincrement())
+  restaurantId Int
+  tableNumber  String
+  capacity     Int
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id])
+  reservations Reservation[]
+  createdAt    DateTime     @default(now())
+
+  @@unique([restaurantId, tableNumber])
+}
+
+model Reservation {
+  id           Int              @id @default(autoincrement())
+  restaurantId Int
+  tableId      Int?
+  customerName String
+  phone        String
+  partySize    Int
+  startTime    DateTime
+  endTime      DateTime
+  status       String           @default("pending")
+  notified     Boolean          @default(false)
+  restaurant   Restaurant       @relation(fields: [restaurantId], references: [id])
+  table        RestaurantTable? @relation(fields: [tableId], references: [id])
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([restaurantId, startTime])
+  @@index([restaurantId, tableId, startTime])
+  @@index([status, restaurantId])
+}
+
+model Waitlist {
+  id           Int         @id @default(autoincrement())
+  restaurantId Int
+  customerName String
+  phone        String
+  partySize    Int
+  preferredDate String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  createdAt    DateTime    @default(now())
+
+  @@index([restaurantId, preferredDate])
+}
