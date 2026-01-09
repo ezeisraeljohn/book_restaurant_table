@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Router } from "express";
 import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import { AppError } from "./errors";
@@ -42,11 +42,15 @@ app.use(
   })
 );
 
+// Health check (unversioned)
 app.get("/health", (_req, res) => {
   sendSuccess(res, { status: "ok" });
 });
 
-app.post("/restaurants", async (req, res, next) => {
+// API v1 Router
+const v1Router = Router();
+
+v1Router.post("/restaurants", async (req, res, next) => {
   try {
     const body = createRestaurantSchema.parse(req.body);
     const restaurant = await createRestaurant({
@@ -61,7 +65,7 @@ app.post("/restaurants", async (req, res, next) => {
   }
 });
 
-app.post("/restaurants/:id/tables", async (req, res, next) => {
+v1Router.post("/restaurants/:id/tables", async (req, res, next) => {
   try {
     const restaurantId = Number(req.params.id);
     if (Number.isNaN(restaurantId)) throw new AppError("Invalid restaurant id", 400);
@@ -76,7 +80,7 @@ app.post("/restaurants/:id/tables", async (req, res, next) => {
   }
 });
 
-app.get("/restaurants/:id", async (req, res, next) => {
+v1Router.get("/restaurants/:id", async (req, res, next) => {
   try {
     const restaurantId = Number(req.params.id);
     if (Number.isNaN(restaurantId)) throw new AppError("Invalid restaurant id", 400);
@@ -100,7 +104,7 @@ app.get("/restaurants/:id", async (req, res, next) => {
   }
 });
 
-app.get("/restaurants/:id/reservations", async (req, res, next) => {
+v1Router.get("/restaurants/:id/reservations", async (req, res, next) => {
   try {
     const restaurantId = Number(req.params.id);
     const { date } = req.query as { date?: string };
@@ -113,7 +117,7 @@ app.get("/restaurants/:id/reservations", async (req, res, next) => {
   }
 });
 
-app.post("/restaurants/:id/reservations", async (req, res, next) => {
+v1Router.post("/restaurants/:id/reservations", async (req, res, next) => {
   try {
     const restaurantId = Number(req.params.id);
     const body = reservationSchema.parse(req.body);
@@ -131,7 +135,7 @@ app.post("/restaurants/:id/reservations", async (req, res, next) => {
   }
 });
 
-app.get("/restaurants/:id/availability", async (req, res, next) => {
+v1Router.get("/restaurants/:id/availability", async (req, res, next) => {
   try {
     const restaurantId = Number(req.params.id);
     const parsed = availabilityQuerySchema.parse(req.query);
@@ -146,7 +150,7 @@ app.get("/restaurants/:id/availability", async (req, res, next) => {
   }
 });
 
-app.get("/restaurants/:id/time-slots", async (req, res, next) => {
+v1Router.get("/restaurants/:id/time-slots", async (req, res, next) => {
   try {
     const restaurantId = Number(req.params.id);
     const parsed = timeSlotsQuerySchema.parse(req.query);
@@ -163,7 +167,7 @@ app.get("/restaurants/:id/time-slots", async (req, res, next) => {
 });
 
 // Reservation status endpoints
-app.patch("/restaurants/:id/reservations/:reservationId", async (req, res, next) => {
+v1Router.patch("/restaurants/:id/reservations/:reservationId", async (req, res, next) => {
   try {
     const restaurantId = Number(req.params.id);
     const reservationId = Number(req.params.reservationId);
@@ -177,7 +181,7 @@ app.patch("/restaurants/:id/reservations/:reservationId", async (req, res, next)
   }
 });
 
-app.post("/restaurants/:id/reservations/:reservationId/confirm", async (req, res, next) => {
+v1Router.post("/restaurants/:id/reservations/:reservationId/confirm", async (req, res, next) => {
   try {
     const restaurantId = Number(req.params.id);
     const reservationId = Number(req.params.reservationId);
@@ -191,7 +195,7 @@ app.post("/restaurants/:id/reservations/:reservationId/confirm", async (req, res
   }
 });
 
-app.delete("/restaurants/:id/reservations/:reservationId", async (req, res, next) => {
+v1Router.delete("/restaurants/:id/reservations/:reservationId", async (req, res, next) => {
   try {
     const restaurantId = Number(req.params.id);
     const reservationId = Number(req.params.reservationId);
@@ -206,7 +210,7 @@ app.delete("/restaurants/:id/reservations/:reservationId", async (req, res, next
 });
 
 // Waitlist endpoints
-app.get("/restaurants/:id/waitlist", async (req, res, next) => {
+v1Router.get("/restaurants/:id/waitlist", async (req, res, next) => {
   try {
     const restaurantId = Number(req.params.id);
     if (Number.isNaN(restaurantId)) throw new AppError("Invalid restaurant id", 400);
@@ -220,7 +224,7 @@ app.get("/restaurants/:id/waitlist", async (req, res, next) => {
   }
 });
 
-app.delete("/restaurants/:id/waitlist/:waitlistId", async (req, res, next) => {
+v1Router.delete("/restaurants/:id/waitlist/:waitlistId", async (req, res, next) => {
   try {
     const restaurantId = Number(req.params.id);
     const waitlistId = Number(req.params.waitlistId);
@@ -234,6 +238,10 @@ app.delete("/restaurants/:id/waitlist/:waitlistId", async (req, res, next) => {
   }
 });
 
+// Mount v1 router
+app.use("/api/v1", v1Router);
+
+// Error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   if (err.name === "ZodError") {
     return res.status(400).json({ error: "Validation failed", details: err.errors });

@@ -63,17 +63,17 @@ describe("Reservations", () => {
   };
 
   it("creates restaurant, table, and reservation", async () => {
-    const restaurantRes = await request(app).post("/restaurants").send(restaurantPayload);
+    const restaurantRes = await request(app).post("/api/v1/restaurants").send(restaurantPayload);
     expect(restaurantRes.status).toBe(201);
     const restaurantId = restaurantRes.body.id;
 
     const tableRes = await request(app)
-      .post(`/restaurants/${restaurantId}/tables`)
+      .post(`/api/v1/restaurants/${restaurantId}/tables`)
       .send({ tableNumber: "A1", capacity: 4 });
     expect(tableRes.status).toBe(201);
 
     const reservationRes = await request(app)
-      .post(`/restaurants/${restaurantId}/reservations`)
+      .post(`/api/v1/restaurants/${restaurantId}/reservations`)
       .send({
         customerName: "Alice",
         phone: "123",
@@ -88,13 +88,13 @@ describe("Reservations", () => {
   });
 
   it("prevents overlapping bookings on the same table", async () => {
-    const restaurantId = (await request(app).post("/restaurants").send(restaurantPayload)).body.id;
+    const restaurantId = (await request(app).post("/api/v1/restaurants").send(restaurantPayload)).body.id;
     const tableId = (
-      await request(app).post(`/restaurants/${restaurantId}/tables`).send({ tableNumber: "A1", capacity: 4 })
+      await request(app).post(`/api/v1/restaurants/${restaurantId}/tables`).send({ tableNumber: "A1", capacity: 4 })
     ).body.id;
 
     const first = await request(app)
-      .post(`/restaurants/${restaurantId}/reservations`)
+      .post(`/api/v1/restaurants/${restaurantId}/reservations`)
       .send({
         customerName: "Alice",
         phone: "123",
@@ -106,7 +106,7 @@ describe("Reservations", () => {
     expect(first.status).toBe(201);
 
     const second = await request(app)
-      .post(`/restaurants/${restaurantId}/reservations`)
+      .post(`/api/v1/restaurants/${restaurantId}/reservations`)
       .send({
         customerName: "Bob",
         phone: "999",
@@ -119,13 +119,13 @@ describe("Reservations", () => {
   });
 
   it("rejects reservation when party exceeds capacity", async () => {
-    const restaurantId = (await request(app).post("/restaurants").send(restaurantPayload)).body.id;
+    const restaurantId = (await request(app).post("/api/v1/restaurants").send(restaurantPayload)).body.id;
     const tableId = (
-      await request(app).post(`/restaurants/${restaurantId}/tables`).send({ tableNumber: "A1", capacity: 4 })
+      await request(app).post(`/api/v1/restaurants/${restaurantId}/tables`).send({ tableNumber: "A1", capacity: 4 })
     ).body.id;
 
     const res = await request(app)
-      .post(`/restaurants/${restaurantId}/reservations`)
+      .post(`/api/v1/restaurants/${restaurantId}/reservations`)
       .send({
         customerName: "Large Party",
         phone: "777",
