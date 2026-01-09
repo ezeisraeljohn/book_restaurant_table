@@ -244,9 +244,19 @@ app.use("/api/v1", v1Router);
 // Error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   if (err.name === "ZodError") {
-    return res.status(400).json({ error: "Validation failed", details: err.errors });
+    return res.status(400).json({
+      success: false,
+      status: 400,
+      message: "Validation failed",
+      data: { details: err.errors },
+    });
   }
   const status = err instanceof AppError ? err.status : 500;
   const message = err instanceof AppError ? err.message : "Internal server error";
-  res.status(status).json({ error: message });
+  res.status(status).json({
+    success: false,
+    status,
+    message,
+    data: null,
+  });
 });

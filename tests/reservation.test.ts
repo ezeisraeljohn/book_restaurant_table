@@ -41,13 +41,11 @@ describe("Reservations", () => {
     disconnectPrisma = prismaModule.disconnectPrisma;
   });
 
-  afterEach(() => {
-    return prisma.$transaction([
-      prisma.reservation.deleteMany(),
-      prisma.waitlist.deleteMany(),
-      prisma.restaurantTable.deleteMany(),
-      prisma.restaurant.deleteMany(),
-    ]);
+  afterEach(async () => {
+    await prisma.reservation.deleteMany();
+    await prisma.waitlist.deleteMany();
+    await prisma.restaurantTable.deleteMany();
+    await prisma.restaurant.deleteMany();
   });
 
   // ensure clean disconnect in watch mode
@@ -65,7 +63,7 @@ describe("Reservations", () => {
   it("creates restaurant, table, and reservation", async () => {
     const restaurantRes = await request(app).post("/api/v1/restaurants").send(restaurantPayload);
     expect(restaurantRes.status).toBe(201);
-    const restaurantId = restaurantRes.body.id;
+    const restaurantId = restaurantRes.body.data.id;
 
     const tableRes = await request(app)
       .post(`/api/v1/restaurants/${restaurantId}/tables`)
@@ -80,18 +78,18 @@ describe("Reservations", () => {
         partySize: 4,
         startTime: "2024-01-01T19:00:00.000Z",
         durationMinutes: 120,
-        tableId: tableRes.body.id,
+        tableId: tableRes.body.data.id,
       });
 
     expect(reservationRes.status).toBe(201);
-    expect(reservationRes.body.tableId).toBe(tableRes.body.id);
+    expect(reservationRes.body.data.tableId).toBe(tableRes.body.data.id);
   });
 
   it("prevents overlapping bookings on the same table", async () => {
-    const restaurantId = (await request(app).post("/api/v1/restaurants").send(restaurantPayload)).body.id;
+    const restaurantId = (await request(app).post("/api/v1/restaurants").send(restaurantPayload)).body.data.id;
     const tableId = (
       await request(app).post(`/api/v1/restaurants/${restaurantId}/tables`).send({ tableNumber: "A1", capacity: 4 })
-    ).body.id;
+    ).body.data.id;
 
     const first = await request(app)
       .post(`/api/v1/restaurants/${restaurantId}/reservations`)
@@ -119,10 +117,10 @@ describe("Reservations", () => {
   });
 
   it("rejects reservation when party exceeds capacity", async () => {
-    const restaurantId = (await request(app).post("/api/v1/restaurants").send(restaurantPayload)).body.id;
+    const restaurantId = (await request(app).post("/api/v1/restaurants").send(restaurantPayload)).body.data.id;
     const tableId = (
       await request(app).post(`/api/v1/restaurants/${restaurantId}/tables`).send({ tableNumber: "A1", capacity: 4 })
-    ).body.id;
+    ).body.data.id;
 
     const res = await request(app)
       .post(`/api/v1/restaurants/${restaurantId}/reservations`)

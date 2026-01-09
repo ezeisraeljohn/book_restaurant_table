@@ -56,6 +56,32 @@ Environment variables:
 
 All requests/response bodies are JSON.
 
+> **Note:** The API is versioned. All endpoints below are prefixed with `/api/v1`. For example, `POST /restaurants` becomes `POST /api/v1/restaurants`.
+
+### Response Format
+
+All responses follow a standard format:
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Request successful",
+  "data": { ... }
+}
+```
+
+For errors:
+
+```json
+{
+  "success": false,
+  "status": 400,
+  "message": "Error message",
+  "data": null
+}
+```
+
 ### POST /restaurants
 
 Create a restaurant.
