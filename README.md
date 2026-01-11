@@ -27,6 +27,13 @@ export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/reservation?s
 export REDIS_URL="redis://localhost:6379"
 ```
 
+or add to your .env:
+
+```bash
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/reservation?schema=public"
+export REDIS_URL="redis://localhost:6379"
+```
+
 3. Push schema and generate Prisma client
 
 ```bash
@@ -36,17 +43,13 @@ npm run prisma:generate
 
 4. Run dev server (auto-restarts)
 
-```bash
-npm run dev
-```
-
 Server listens on `http://localhost:3000` by default. 5. Run tests (requires a reachable Postgres database)
 
 ```bash
 npm test
 ```
 
-Environment variables:
+Environment variables .env:
 
 - `PORT` (default 3000)
 - `DATABASE_URL` (Postgres URL for Prisma)
